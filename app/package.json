@@ -1,7 +1,7 @@
 {
   "name": "marknote",
   "version": "0.1.0",
-  "description": "MarkNote — a cross-platform Markdown companion app for Microsoft OneNote",
+  "description": "MarkNote — a Markdown companion app for Microsoft OneNote (Windows)",
   "main": "./out/main/index.js",
   "author": "jinhjcn@gmail.com",
   "private": true,
@@ -10,7 +10,6 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "build:win": "npm run build && electron-builder --win",
-    "build:mac": "npm run build && electron-builder --mac",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "test": "vitest run"
   },

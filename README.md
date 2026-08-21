@@ -1,14 +1,29 @@
 # MarkNote
 
-A cross-platform (Windows + macOS) Markdown writing tool for Microsoft OneNote, in the spirit
-of [OneMark](https://onemark.neux.studio/).
+A Windows desktop Markdown writing tool for Microsoft OneNote, in the spirit of
+[OneMark](https://onemark.neux.studio/).
+
+## Requirements
+
+**To just run the app** (using a build from [Packaging](#packaging), e.g. `MarkNote-win-x64.zip`):
+- Windows 10 or 11 (x64 or arm64)
+- Nothing else — Electron bundles its own Chromium/Node runtime, so there's no separate
+  install of Node, a browser, or any runtime required.
+- Microsoft OneNote (desktop or web) installed/available, to paste into.
+
+**To build or develop from source** (everything under [Development](#development) and
+[Packaging](#packaging)):
+- [Node.js](https://nodejs.org/) 20 or later (LTS recommended) — npm comes bundled with it
+- Git, if cloning this repo rather than downloading it as a zip
+- Windows, for `npm run build:win` specifically (electron-builder cross-compiles most of the
+  packaging, but the app itself has only been built/tested on Windows — see
+  [Known limitations](#known-limitations))
 
 ## Why a standalone app, not an "add-in"?
 
 Microsoft's OneNote add-in platform (`OneNote.run`, task panes) only runs inside **OneNote on
-the web** — neither the Windows desktop app nor OneNote for Mac supports it, and Mac has no
-OneNote add-in mechanism at all. So instead of an in-app plugin (which couldn't run on both
-Windows and macOS), this is a small **Electron desktop app**.
+the web** — the Windows desktop app doesn't support it at all. So instead of an in-app plugin
+(which couldn't run there), this is a small **Electron desktop app**.
 
 ## Why clipboard paste, not sign-in + direct push?
 
@@ -19,14 +34,14 @@ work-account admin restrictions, deprecated flows — none of which is worth the
 is fundamentally a "format my Markdown nicely" tool. So the app dropped all of that: **no sign-in,
 no Azure setup, no account of any kind.**
 
-Instead, it uses the clipboard, which every version of OneNote (Windows, Mac, web) already
-knows how to accept rich-formatted paste from:
+Instead, it uses the clipboard, which OneNote already knows how to accept rich-formatted paste
+from:
 
 1. Write Markdown in the app, see the live preview.
 2. Click **Copy for OneNote** — this puts richly-formatted content on your system clipboard
    (not just plain text).
-3. Switch to OneNote, click into a page, press **Ctrl+V** (**Cmd+V** on Mac) — it pastes in
-   fully formatted: headings, bold/italic, lists, tables, checkboxes, etc.
+3. Switch to OneNote, click into a page, press **Ctrl+V** — it pastes in fully formatted:
+   headings, bold/italic, lists, tables, checkboxes, etc.
 
 It also works the other way — **Paste from OneNote** reads whatever rich content you last
 copied from a OneNote page and converts it back into Markdown in the editor, so you can pull
@@ -37,7 +52,7 @@ existing notes in, edit them as Markdown, and copy them back out.
 - Live-preview Markdown editor (GFM: headings, bold/italic, nested lists, tables, fenced code
   blocks, `- [ ]` task-list checkboxes, links, images).
 - **Copy for OneNote** — copies richly-formatted content to the clipboard for pasting into any
-  OneNote page, on any platform.
+  OneNote page.
 - **Paste from OneNote** — converts whatever's on the clipboard (copied from a OneNote page)
   back into Markdown.
 - Open/save local `.md` files; copy the raw Markdown source to the clipboard.
@@ -53,10 +68,10 @@ existing notes in, edit them as Markdown, and copy them back out.
   if you want it added back as an optional path.
 - **Unsigned.** Windows will show a SmartScreen warning ("Windows protected your PC" →
   More info → Run anyway) the first time someone runs the `.exe`, since it isn't signed by a
-  recognized publisher. Real code-signing certs (and, for macOS, notarization) are something
-  only you can obtain — not something this build process can add.
-- **macOS build can't be produced from this Windows machine.** A `.dmg`/mac `.app` genuinely
-  needs to be built on macOS (or CI running macOS); `npm run build:mac` will not work here.
+  recognized publisher. A real code-signing cert is something only you can obtain — not
+  something this build process can add.
+- **Windows only.** OneNote for Mac has no add-in mechanism either, so the same "standalone
+  app" approach would work there in principle, but this build isn't packaged or tested for it.
 
 ## Project layout
 

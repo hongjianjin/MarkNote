@@ -14,13 +14,6 @@ win:
   target:
     - target: zip
       arch: [x64, arm64]
-mac:
-  target:
-    - target: dmg
-      arch: [x64, arm64]
-  category: public.app-category.productivity
-  # Unsigned by default. Distributing outside your own machine requires an
-  # Apple Developer ID cert + notarization — see README.md "Packaging" notes.
 linux:
   target:
     - AppImage
