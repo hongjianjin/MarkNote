@@ -1,0 +1,26 @@
+appId: com.jinhjcn.marknote
+productName: MarkNote
+directories:
+  buildResources: build
+files:
+  - out/**/*
+  - package.json
+win:
+  # zip avoids the NSIS installer step, which pulls electron-builder's
+  # winCodeSign tool bundle — extracting it needs symlink-creation privilege
+  # (admin, or Windows Developer Mode enabled), which isn't available on
+  # every machine. zip needs neither: unzip and run the .exe directly.
+  # Switch back to nsis for a real installer once that privilege is available.
+  target:
+    - target: zip
+      arch: [x64, arm64]
+mac:
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  category: public.app-category.productivity
+  # Unsigned by default. Distributing outside your own machine requires an
+  # Apple Developer ID cert + notarization — see README.md "Packaging" notes.
+linux:
+  target:
+    - AppImage
