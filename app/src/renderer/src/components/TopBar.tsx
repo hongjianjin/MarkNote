@@ -2,9 +2,15 @@ interface Props {
   status: string | null
   explorerOpen: boolean
   onToggleExplorer: () => void
+  onAbout: () => void
 }
 
-export default function TopBar({ status, explorerOpen, onToggleExplorer }: Props): JSX.Element {
+export default function TopBar({
+  status,
+  explorerOpen,
+  onToggleExplorer,
+  onAbout
+}: Props): JSX.Element {
   return (
     <header className="topbar">
       <button
@@ -15,8 +21,10 @@ export default function TopBar({ status, explorerOpen, onToggleExplorer }: Props
       >
         Explorer
       </button>
-      <div className="topbar-title">MarkNote</div>
       <div className="topbar-status">{status}</div>
+      <button className="ghost" onClick={onAbout}>
+        About
+      </button>
     </header>
   )
 }

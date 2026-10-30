@@ -498,3 +498,54 @@ button.link-button {
   font-size: 13px;
   color: var(--text-muted);
 }
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.modal {
+  min-width: 340px;
+  max-width: 90vw;
+  padding: 24px 28px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+}
+
+.modal h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+}
+
+.about-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 16px;
+  margin: 0 0 20px;
+}
+
+.about-list dt {
+  color: var(--text-muted);
+}
+
+.about-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.about-list a {
+  color: var(--accent);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+}

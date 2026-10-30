@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import TopBar from './components/TopBar'
 import EditorPane from './components/EditorPane'
 import FileExplorer from './components/FileExplorer'
+import AboutDialog from './components/AboutDialog'
 import { renderPreviewHtml } from './lib/previewRender'
 import { markdownToOneNoteHtml } from '@shared/mdToOneNote'
 import { oneNoteHtmlToMarkdown } from '@shared/oneNoteToMd'
@@ -30,6 +31,7 @@ export default function App(): JSX.Element {
   const [fileName, setFileName] = useState<string | null>(null)
   const [filePath, setFilePath] = useState<string | null>(null)
   const [explorerOpen, setExplorerOpen] = useState(true)
+  const [aboutOpen, setAboutOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
@@ -232,6 +234,7 @@ export default function App(): JSX.Element {
         status={status}
         explorerOpen={explorerOpen}
         onToggleExplorer={() => setExplorerOpen((v) => !v)}
+        onAbout={() => setAboutOpen(true)}
       />
       <div className="app-body">
         {/* Hidden rather than unmounted, so its expanded folders survive a toggle. */}
@@ -252,6 +255,7 @@ export default function App(): JSX.Element {
           error={error}
         />
       </div>
+      {aboutOpen && <AboutDialog onClose={() => setAboutOpen(false)} />}
       {dragging && <div className="drop-overlay">Drop a Markdown file to open it</div>}
     </div>
   )

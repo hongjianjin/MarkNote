@@ -24,7 +24,9 @@ function createWindow(): void {
   win.once('ready-to-show', () => win.show())
 
   win.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url)
+    // Links come from rendered Markdown (possibly an untrusted file), so only hand
+    // plain web links to the OS — never file:, custom-protocol or other schemes.
+    if (/^https?:\/\//i.test(url)) void shell.openExternal(url)
     return { action: 'deny' }
   })
 
