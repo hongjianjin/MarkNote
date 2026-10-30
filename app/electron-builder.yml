@@ -6,14 +6,12 @@ files:
   - out/**/*
   - package.json
 win:
-  # zip avoids the NSIS installer step, which pulls electron-builder's
-  # winCodeSign tool bundle — extracting it needs symlink-creation privilege
-  # (admin, or Windows Developer Mode enabled), which isn't available on
-  # every machine. zip needs neither: unzip and run the .exe directly.
-  # Switch back to nsis for a real installer once that privilege is available.
+  # NSIS installer (per-user, no admin needed). Building it needs electron-builder's
+  # winCodeSign bundle, whose extraction can fail on accounts without symlink privilege —
+  # see README "Packaging" for the workaround.
   target:
-    - target: zip
-      arch: [x64, arm64]
+    - target: nsis
+      arch: [x64]
 linux:
   target:
     - AppImage

@@ -101,20 +101,20 @@ npm run typecheck
 ## Packaging
 
 ```bash
-npm run build:win   # -> app/dist/win-unpacked (a real, working portable app)
+npm run build:win   # -> app/dist/MarkNote Setup 0.1.0.exe (installer) + app/dist/win-unpacked/
 ```
 
-`electron-builder.yml` targets `zip` rather than an NSIS installer: NSIS pulls a signing-tool
-bundle (`winCodeSign`) that needs symlink-creation privilege, which isn't available on every
-Windows account (needs admin, or Developer Mode enabled in Settings). If electron-builder's own
-zip step also fails on your machine for the same reason, the `win-unpacked` folder it produces
-first is already a complete, runnable app — zip it yourself:
+The installer is per-user (no admin rights needed), adds a Start Menu/desktop shortcut, and
+includes an uninstaller. `app/dist/win-unpacked/MarkNote.exe` is also a complete portable app —
+zip that folder to distribute without an installer:
 
 ```powershell
 Compress-Archive -Path app\dist\win-unpacked\* -DestinationPath MarkNote-win-x64.zip
 ```
 
-To distribute: unzip anywhere and run `MarkNote.exe` — no installer needed. If you
-enable Developer Mode (or build on a machine/CI where you're an admin), switch the `win.target`
-in `electron-builder.yml` back to `nsis` for a proper installer with a Start Menu shortcut and
-uninstaller.
+**If `build:win` fails** with `Cannot create symbolic link : A required privilege is not held`:
+electron-builder's `winCodeSign` download contains macOS symlinks that a non-admin Windows
+account can't extract (the Windows files in it extract fine). Either enable Developer Mode /
+run as admin, or copy one of the partial extractions it left in
+`%LOCALAPPDATA%\electron-builder\Cache\winCodeSign\<number>` to a sibling folder named
+`winCodeSign-2.6.0` and rerun.
