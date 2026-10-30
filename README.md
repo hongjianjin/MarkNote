@@ -5,8 +5,8 @@ A Windows desktop Markdown writing tool for Microsoft OneNote, in the spirit of
 
 ## Requirements
 
-**To just run the app** (using a build from [Packaging](#packaging), e.g. `MarkNote-win-x64.zip`):
-- Windows 10 or 11 (x64 or arm64)
+**To just run the app** (the installer or `MarkNote-win-x64.zip` from [Packaging](#packaging)):
+- Windows 10 or 11, 64-bit (x64)
 - Nothing else — Electron bundles its own Chromium/Node runtime, so there's no separate
   install of Node, a browser, or any runtime required.
 - Microsoft OneNote (desktop or web) installed/available, to paste into.
@@ -56,6 +56,12 @@ existing notes in, edit them as Markdown, and copy them back out.
 - **Paste from OneNote** — converts whatever's on the clipboard (copied from a OneNote page)
   back into Markdown.
 - Open/save local `.md` files; copy the raw Markdown source to the clipboard.
+- **Explorer panel** — click **Open Folder…** to browse a folder (including mapped network
+  drives) and open Markdown files with a click. It shows only subfolders and `.md` / `.markdown` /
+  `.mdown` / `.txt` files, remembers the last folder, and the **Explorer** button at the top
+  left shows or hides it. Asks first if opening a file would discard unsaved edits.
+- **Resizable panes** — drag the divider between the source and preview to change the split
+  (double-click to reset to 50/50; arrow keys nudge it). The ratio is remembered.
 - **Drag and drop** a `.md` / `.markdown` / `.txt` file anywhere onto the window to open it
   (asks first if that would discard unsaved edits).
 - **Save HTML** / **Save PDF** — export the rendered preview as a self-contained HTML file
@@ -63,6 +69,9 @@ existing notes in, edit them as Markdown, and copy them back out.
 
 ## Known limitations
 
+- **Disconnected network drives hang.** If a mapped drive shows as unavailable in Windows
+  (`net use`), choosing a folder on it makes the Explorer wait on Windows' own timeout — there
+  is no timeout of MarkNote's. Reconnect the drive first.
 - **PDF page size is US Letter** (18 mm margins). To use A4, change `size: Letter` in the
   `@page` rule in `app/src/shared/exportHtml.ts`.
 - **The in-app preview and exports show `- [ ]` task items as literal `[ ]` text.** They
@@ -84,9 +93,14 @@ existing notes in, edit them as Markdown, and copy them back out.
 ## Project layout
 
 See [app/](app) for the Electron project; `src/main` (Node/Electron main process — file
-dialogs & clipboard access), `src/preload` (the typed bridge exposed to the renderer),
-`src/renderer` (the React UI), and `src/shared` (the two Markdown ⇄ OneNote-HTML converters,
-used by both the renderer and the test suite).
+dialogs, clipboard, the folder Explorer and PDF printing), `src/preload` (the typed bridge
+exposed to the renderer), `src/renderer` (the React UI), and `src/shared` (the two
+Markdown ⇄ OneNote-HTML converters and the HTML export template, used by both the renderer and
+the test suite).
+
+The Explorer's main-process side only lists or reads inside the folder you picked in the native
+dialog, and only Markdown/text files — the renderer never supplies the root, so it can't be
+used to read arbitrary files.
 
 ## Development
 
