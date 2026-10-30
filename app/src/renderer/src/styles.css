@@ -315,8 +315,23 @@ button.link-button {
 .editor-source {
   flex: 1;
   min-width: 0;
-  border-right: 1px solid var(--border);
   overflow: auto;
+}
+
+.split-divider {
+  flex: 0 0 7px;
+  cursor: col-resize;
+  background: var(--border);
+  background-clip: content-box;
+  padding: 0 3px; /* 1px visible line, 7px grab area */
+  touch-action: none;
+}
+
+.split-divider:hover,
+.split-divider:focus-visible,
+.split-divider:active {
+  background-color: var(--accent);
+  outline: none;
 }
 
 .editor-source .cm-editor {
