@@ -1,36 +1,160 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import TopBar from './components/TopBar'
 import EditorPane from './components/EditorPane'
+import { renderPreviewHtml } from './lib/previewRender'
 import { markdownToOneNoteHtml } from '@shared/mdToOneNote'
 import { oneNoteHtmlToMarkdown } from '@shared/oneNoteToMd'
+import { buildStandaloneHtml } from '@shared/exportHtml'
 
 const STARTER_MARKDOWN =
   '# New page\n\n' +
   'Write Markdown here — headings, **bold**, *italic*, lists, `code`, tables, and ' +
   '`- [ ]` checkboxes all convert to OneNote formatting.\n\n' +
   'When you\'re ready, click **Copy for OneNote**, switch to OneNote, and press ' +
-  'Ctrl+V (Cmd+V on Mac) to paste it in, fully formatted.\n'
+  'Ctrl+V to paste it in, fully formatted. You can also drag a .md file onto this ' +
+  'window to open it, or save the rendered result as HTML or PDF.\n'
+
+const MARKDOWN_FILE_RE = /\.(md|markdown|mdown|txt)$/i
+
+function baseName(filePath: string): string {
+  return filePath.split(/[\\/]/).pop() ?? filePath
+}
+
+function stripExtension(fileName: string): string {
+  return fileName.replace(/\.[^.]+$/, '')
+}
 
 export default function App(): JSX.Element {
   const [markdownValue, setMarkdownValue] = useState(STARTER_MARKDOWN)
+  const [fileName, setFileName] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
+  const [dragging, setDragging] = useState(false)
+
+  // The text as of the last open/drop/save, to tell whether a drop would discard edits.
+  const baselineRef = useRef(STARTER_MARKDOWN)
+
+  /** Title for export: the first H1, else the file name, else a generic fallback. */
+  function documentTitle(): { title: string; suggestedName: string } {
+    const fallback = fileName ? stripExtension(fileName) : 'Untitled'
+    const { title } = markdownToOneNoteHtml(markdownValue, fallback)
+    return { title, suggestedName: fileName ? stripExtension(fileName) : title }
+  }
+
+  function loadDocument(content: string, name: string | null): void {
+    setMarkdownValue(content)
+    setFileName(name)
+    baselineRef.current = content
+  }
 
   async function handleOpenFile(): Promise<void> {
     setError(null)
     const result = await window.oneNote.files.openMarkdown()
     if (result) {
-      setMarkdownValue(result.content)
+      loadDocument(result.content, baseName(result.path))
       setStatus(`Opened ${result.path}`)
     }
   }
 
+  async function handleDroppedFile(file: File): Promise<void> {
+    setError(null)
+    if (!MARKDOWN_FILE_RE.test(file.name)) {
+      setError(`Can't open "${file.name}" — drop a .md, .markdown or .txt file.`)
+      return
+    }
+    if (markdownValue !== baselineRef.current) {
+      const confirmed = window.confirm(
+        `Open "${file.name}"? This replaces the current editor content, including unsaved edits.`
+      )
+      if (!confirmed) return
+    }
+    try {
+      loadDocument(await file.text(), file.name)
+      setStatus(`Opened ${file.name}`)
+    } catch (e) {
+      setError(`Couldn't read "${file.name}": ${(e as Error)?.message ?? String(e)}`)
+    }
+  }
+
+  // Window-level, capture-phase listeners: without preventDefault on drop, Electron
+  // would navigate to the dropped file, and CodeMirror would otherwise insert the
+  // file's text at the drop point instead of opening it as a document. The handler
+  // lives in a ref so the listeners always see the current editor state.
+  const dropHandlerRef = useRef(handleDroppedFile)
+  dropHandlerRef.current = handleDroppedFile
+
+  useEffect(() => {
+    let depth = 0
+    const hasFiles = (e: DragEvent): boolean =>
+      !!e.dataTransfer && Array.from(e.dataTransfer.types).includes('Files')
+
+    const onDragEnter = (e: DragEvent): void => {
+      if (!hasFiles(e)) return
+      e.preventDefault()
+      depth += 1
+      setDragging(true)
+    }
+    const onDragOver = (e: DragEvent): void => {
+      if (!hasFiles(e)) return
+      e.preventDefault()
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'
+    }
+    const onDragLeave = (e: DragEvent): void => {
+      if (!hasFiles(e)) return
+      depth = Math.max(0, depth - 1)
+      if (depth === 0) setDragging(false)
+    }
+    const onDrop = (e: DragEvent): void => {
+      if (!hasFiles(e)) return
+      e.preventDefault()
+      e.stopPropagation()
+      depth = 0
+      setDragging(false)
+      const file = e.dataTransfer?.files[0]
+      if (file) void dropHandlerRef.current(file)
+    }
+
+    window.addEventListener('dragenter', onDragEnter, true)
+    window.addEventListener('dragover', onDragOver, true)
+    window.addEventListener('dragleave', onDragLeave, true)
+    window.addEventListener('drop', onDrop, true)
+    return () => {
+      window.removeEventListener('dragenter', onDragEnter, true)
+      window.removeEventListener('dragover', onDragOver, true)
+      window.removeEventListener('dragleave', onDragLeave, true)
+      window.removeEventListener('drop', onDrop, true)
+    }
+  }, [])
+
   async function handleSaveFile(): Promise<void> {
     setError(null)
-    const { title } = markdownToOneNoteHtml(markdownValue, 'page')
-    const result = await window.oneNote.files.saveMarkdown(markdownValue, title)
-    if (result) setStatus(`Saved to ${result.path}`)
+    const { suggestedName } = documentTitle()
+    const result = await window.oneNote.files.saveMarkdown(markdownValue, suggestedName)
+    if (result) {
+      setFileName(baseName(result.path))
+      baselineRef.current = markdownValue
+      setStatus(`Saved to ${result.path}`)
+    }
+  }
+
+  async function handleExport(kind: 'html' | 'pdf'): Promise<void> {
+    setError(null)
+    setBusy(true)
+    try {
+      const { title, suggestedName } = documentTitle()
+      const html = buildStandaloneHtml(title, renderPreviewHtml(markdownValue))
+      const files = window.oneNote.files
+      const result =
+        kind === 'html'
+          ? await files.saveHtml(html, suggestedName)
+          : await files.savePdf(html, suggestedName)
+      if (result) setStatus(`Saved ${kind.toUpperCase()} to ${result.path}`)
+    } catch (e) {
+      setError(`Couldn't save ${kind.toUpperCase()}: ${(e as Error)?.message ?? String(e)}`)
+    } finally {
+      setBusy(false)
+    }
   }
 
   async function handleCopyMarkdown(): Promise<void> {
@@ -44,7 +168,7 @@ export default function App(): JSX.Element {
     try {
       const { bodyHtml } = markdownToOneNoteHtml(markdownValue, 'Untitled page')
       await window.oneNote.files.copyForOneNote({ text: markdownValue, html: bodyHtml })
-      setStatus('Copied! Switch to OneNote and press Ctrl+V (Cmd+V on Mac) to paste it in.')
+      setStatus('Copied! Switch to OneNote and press Ctrl+V to paste it in.')
     } catch (e) {
       setError((e as Error)?.message ?? String(e))
     } finally {
@@ -89,6 +213,8 @@ export default function App(): JSX.Element {
           onChange={setMarkdownValue}
           onOpenFile={handleOpenFile}
           onSaveFile={handleSaveFile}
+          onExportHtml={() => void handleExport('html')}
+          onExportPdf={() => void handleExport('pdf')}
           onCopyMarkdown={handleCopyMarkdown}
           onCopyForOneNote={handleCopyForOneNote}
           onPasteFromOneNote={handlePasteFromOneNote}
@@ -96,6 +222,7 @@ export default function App(): JSX.Element {
           error={error}
         />
       </div>
+      {dragging && <div className="drop-overlay">Drop a Markdown file to open it</div>}
     </div>
   )
 }

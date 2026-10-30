@@ -6,6 +6,10 @@ const api: OneNoteBridge = {
     openMarkdown: () => ipcRenderer.invoke('files:openMarkdown'),
     saveMarkdown: (content: string, suggestedName?: string) =>
       ipcRenderer.invoke('files:saveMarkdown', content, suggestedName),
+    saveHtml: (html: string, suggestedName?: string) =>
+      ipcRenderer.invoke('files:saveHtml', html, suggestedName),
+    savePdf: (html: string, suggestedName?: string) =>
+      ipcRenderer.invoke('files:savePdf', html, suggestedName),
     copyText: (text: string) => ipcRenderer.invoke('files:copyText', text),
     copyForOneNote: (payload: { text: string; html: string }) =>
       ipcRenderer.invoke('files:copyForOneNote', payload),

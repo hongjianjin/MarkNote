@@ -5,6 +5,10 @@ export interface OneNoteBridge {
   files: {
     openMarkdown: () => Promise<{ path: string; content: string } | null>
     saveMarkdown: (content: string, suggestedName?: string) => Promise<{ path: string } | null>
+    /** Saves a complete standalone HTML document via a Save dialog. Null if cancelled. */
+    saveHtml: (html: string, suggestedName?: string) => Promise<{ path: string } | null>
+    /** Prints a complete standalone HTML document to PDF via a Save dialog. Null if cancelled. */
+    savePdf: (html: string, suggestedName?: string) => Promise<{ path: string } | null>
     /** Plain-text clipboard copy (the raw Markdown source). */
     copyText: (text: string) => Promise<void>
     /** Writes both a plain-text and an HTML flavor to the clipboard, so pasting into

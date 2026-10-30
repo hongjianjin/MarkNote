@@ -56,9 +56,17 @@ existing notes in, edit them as Markdown, and copy them back out.
 - **Paste from OneNote** — converts whatever's on the clipboard (copied from a OneNote page)
   back into Markdown.
 - Open/save local `.md` files; copy the raw Markdown source to the clipboard.
+- **Drag and drop** a `.md` / `.markdown` / `.txt` file anywhere onto the window to open it
+  (asks first if that would discard unsaved edits).
+- **Save HTML** / **Save PDF** — export the rendered preview as a self-contained HTML file
+  (styles embedded, no scripts) or a PDF. Both default to the open file's name.
 
 ## Known limitations
 
+- **PDF page size is US Letter** (18 mm margins). To use A4, change `size: Letter` in the
+  `@page` rule in `app/src/shared/exportHtml.ts`.
+- **The in-app preview and exports show `- [ ]` task items as literal `[ ]` text.** They
+  become real OneNote checkboxes only via **Copy for OneNote**.
 - **No LaTeX rendering in OneNote itself.** OneNote's HTML subset has no math support, so LaTeX
   isn't converted — write it as a fenced code block for now if you need to keep the source.
 - **No automatic notebook browsing.** Since there's no sign-in, the app doesn't know which

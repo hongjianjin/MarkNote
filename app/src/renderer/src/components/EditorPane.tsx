@@ -1,21 +1,16 @@
 import { useMemo, useState } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { markdown as markdownLang } from '@codemirror/lang-markdown'
-import MarkdownIt from 'markdown-it'
-import DOMPurify from 'dompurify'
 import { markdownToOneNoteHtml } from '@shared/mdToOneNote'
-
-// html:true so the preview matches what "Copy for OneNote" produces (colored
-// text etc. via inline HTML like <span style="color:...">) — sanitized with
-// DOMPurify before rendering, since this Markdown can come from an untrusted
-// file opened off disk and gets injected via dangerouslySetInnerHTML below.
-const previewMd = new MarkdownIt({ html: true, linkify: true })
+import { renderPreviewHtml } from '../lib/previewRender'
 
 interface Props {
   value: string
   onChange: (value: string) => void
   onOpenFile: () => void
   onSaveFile: () => void
+  onExportHtml: () => void
+  onExportPdf: () => void
   onCopyMarkdown: () => void
   onCopyForOneNote: () => void
   onPasteFromOneNote: () => void
@@ -28,6 +23,8 @@ export default function EditorPane({
   onChange,
   onOpenFile,
   onSaveFile,
+  onExportHtml,
+  onExportPdf,
   onCopyMarkdown,
   onCopyForOneNote,
   onPasteFromOneNote,
@@ -38,7 +35,7 @@ export default function EditorPane({
   const [showPreview, setShowPreview] = useState(true)
 
   const { title } = useMemo(() => markdownToOneNoteHtml(value, '(untitled)'), [value])
-  const previewHtml = useMemo(() => DOMPurify.sanitize(previewMd.render(value)), [value])
+  const previewHtml = useMemo(() => renderPreviewHtml(value), [value])
 
   return (
     <section className="editor-pane">
@@ -66,6 +63,12 @@ export default function EditorPane({
           </button>
           <button className="ghost" disabled={busy} onClick={onSaveFile}>
             Save .md
+          </button>
+          <button className="ghost" disabled={busy} onClick={onExportHtml}>
+            Save HTML
+          </button>
+          <button className="ghost" disabled={busy} onClick={onExportPdf}>
+            Save PDF
           </button>
           <button className="ghost" disabled={busy} onClick={onCopyMarkdown}>
             Copy Markdown
@@ -97,8 +100,8 @@ export default function EditorPane({
           <div className="editor-preview">
             <div
               className="preview-content"
-              // markdown-it has html:true (for inline HTML like colored-text spans),
-              // so previewHtml is run through DOMPurify above before landing here.
+              // markdown-it has html:true (for inline HTML like colored-text spans);
+              // renderPreviewHtml sanitizes with DOMPurify before it lands here.
               dangerouslySetInnerHTML={{ __html: previewHtml }}
             />
           </div>
