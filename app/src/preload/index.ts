@@ -2,6 +2,12 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type { OneNoteBridge } from '../shared/types'
 
 const api: OneNoteBridge = {
+  explorer: {
+    getRoot: () => ipcRenderer.invoke('explorer:getRoot'),
+    chooseRoot: () => ipcRenderer.invoke('explorer:chooseRoot'),
+    listDir: (dir: string) => ipcRenderer.invoke('explorer:listDir', dir),
+    readFile: (file: string) => ipcRenderer.invoke('explorer:readFile', file)
+  },
   files: {
     openMarkdown: () => ipcRenderer.invoke('files:openMarkdown'),
     saveMarkdown: (content: string, suggestedName?: string) =>

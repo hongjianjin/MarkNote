@@ -1,7 +1,24 @@
 // Shared types used across main, preload, and renderer processes.
 
+export interface DirEntry {
+  name: string
+  /** Absolute path. */
+  path: string
+  isDirectory: boolean
+}
+
 /** The typed API the preload script exposes to the renderer via contextBridge. */
 export interface OneNoteBridge {
+  explorer: {
+    /** The previously opened folder, if it still exists. */
+    getRoot: () => Promise<string | null>
+    /** Shows a folder picker; null if cancelled. */
+    chooseRoot: () => Promise<string | null>
+    /** Subfolders and Markdown/text files in a folder (must be inside the opened folder). */
+    listDir: (dir: string) => Promise<DirEntry[]>
+    /** Text of a Markdown/text file (must be inside the opened folder). */
+    readFile: (file: string) => Promise<string>
+  }
   files: {
     openMarkdown: () => Promise<{ path: string; content: string } | null>
     saveMarkdown: (content: string, suggestedName?: string) => Promise<{ path: string } | null>

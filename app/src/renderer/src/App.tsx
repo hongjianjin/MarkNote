@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import TopBar from './components/TopBar'
 import EditorPane from './components/EditorPane'
+import FileExplorer from './components/FileExplorer'
 import { renderPreviewHtml } from './lib/previewRender'
 import { markdownToOneNoteHtml } from '@shared/mdToOneNote'
 import { oneNoteHtmlToMarkdown } from '@shared/oneNoteToMd'
@@ -27,6 +28,8 @@ function stripExtension(fileName: string): string {
 export default function App(): JSX.Element {
   const [markdownValue, setMarkdownValue] = useState(STARTER_MARKDOWN)
   const [fileName, setFileName] = useState<string | null>(null)
+  const [filePath, setFilePath] = useState<string | null>(null)
+  const [explorerOpen, setExplorerOpen] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
@@ -42,9 +45,10 @@ export default function App(): JSX.Element {
     return { title, suggestedName: fileName ? stripExtension(fileName) : title }
   }
 
-  function loadDocument(content: string, name: string | null): void {
+  function loadDocument(content: string, name: string | null, path: string | null = null): void {
     setMarkdownValue(content)
     setFileName(name)
+    setFilePath(path)
     baselineRef.current = content
   }
 
@@ -52,8 +56,25 @@ export default function App(): JSX.Element {
     setError(null)
     const result = await window.oneNote.files.openMarkdown()
     if (result) {
-      loadDocument(result.content, baseName(result.path))
+      loadDocument(result.content, baseName(result.path), result.path)
       setStatus(`Opened ${result.path}`)
+    }
+  }
+
+  async function handleOpenFromExplorer(path: string): Promise<void> {
+    setError(null)
+    if (path === filePath && markdownValue === baselineRef.current) return // already open, unchanged
+    if (markdownValue !== baselineRef.current) {
+      const confirmed = window.confirm(
+        `Open "${baseName(path)}"? This replaces the current editor content, including unsaved edits.`
+      )
+      if (!confirmed) return
+    }
+    try {
+      loadDocument(await window.oneNote.explorer.readFile(path), baseName(path), path)
+      setStatus(`Opened ${path}`)
+    } catch (e) {
+      setError(`Couldn't open "${baseName(path)}": ${(e as Error)?.message ?? String(e)}`)
     }
   }
 
@@ -133,6 +154,7 @@ export default function App(): JSX.Element {
     const result = await window.oneNote.files.saveMarkdown(markdownValue, suggestedName)
     if (result) {
       setFileName(baseName(result.path))
+      setFilePath(result.path)
       baselineRef.current = markdownValue
       setStatus(`Saved to ${result.path}`)
     }
@@ -206,8 +228,16 @@ export default function App(): JSX.Element {
 
   return (
     <div className="app-shell">
-      <TopBar status={status} />
+      <TopBar
+        status={status}
+        explorerOpen={explorerOpen}
+        onToggleExplorer={() => setExplorerOpen((v) => !v)}
+      />
       <div className="app-body">
+        {/* Hidden rather than unmounted, so its expanded folders survive a toggle. */}
+        <div className="explorer-slot" hidden={!explorerOpen}>
+          <FileExplorer activePath={filePath} onOpenFile={(p) => void handleOpenFromExplorer(p)} />
+        </div>
         <EditorPane
           value={markdownValue}
           onChange={setMarkdownValue}
